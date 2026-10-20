@@ -1,277 +1,615 @@
-import streamlit as st
+import base64
+import os
 import random
 import pandas as pd
-import datetime
+import streamlit as st
 
-# Sayfa Yapılandırması
+# Page Configuration
 st.set_page_config(
-    page_title="Eren Erdoğan | Enterprise Air Cargo Control Tower",
-    page_icon="✈",
+    page_title="CargoPulse | Air Cargo Control Suite",
+    page_icon="🫀",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed",
 )
 
-# Yan Menüden Modül Seçimi
-st.sidebar.markdown("### 🎛️ CONTROL CENTER SUITE")
-st.sidebar.markdown("---")
-modul = st.sidebar.radio("Select Operational Module:", [
-    "📦 Live AWB Tracking & Telemetry", 
-    "💰 Demurrage & Storage Risk Suite", 
-    "📊 Route Yield & Corridor Analytics",
-    "🛄 ULD & Center of Gravity Optimizer",
-    "🌱 CORSIA Green Logistics & ESG",
-    "👤 About & Professional Profile"
-])
+if "logged_in" not in st.session_state:
+  st.session_state.logged_in = False
 
-# HER SAYFAYA ÖZEL FARKLI ARKA PLAN GÖRSELİ
-bg_images = {
-    "📦 Live AWB Tracking & Telemetry": "https://images.unsplash.com/photo-1570125909232-eb263c188f7e", 
-    "💰 Demurrage & Storage Risk Suite": "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d", 
-    "📊 Route Yield & Corridor Analytics": "https://images.unsplash.com/photo-1436491865332-7a61a109cc05", 
-    "🛄 ULD & Center of Gravity Optimizer": "https://images.unsplash.com/photo-1519003722824-194d4455a60c", 
-    "🌱 CORSIA Green Logistics & ESG": "https://images.unsplash.com/photo-1506015391300-4802dc74de2e", 
-    "👤 About & Professional Profile": "https://images.unsplash.com/photo-1517976487492-5750f3195933" 
-}
+query_params = st.query_params
+if "action" in query_params and query_params["action"] == "start":
+  st.session_state.logged_in = True
 
-current_bg = bg_images.get(modul, bg_images["📦 Live AWB Tracking & Telemetry"])
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+COVER_IMAGE_PATH = os.path.join(BASE_DIR, "cargopulse_cover.png")
 
-# Profesyonel CSS & Renkli Glassmorphism Tasarım (Süslü Parantezler Çiftlendi)
-st.markdown(
-    f"""
+img_b64 = ""
+if os.path.exists(COVER_IMAGE_PATH):
+  with open(COVER_IMAGE_PATH, "rb") as f:
+    img_b64 = base64.b64encode(f.read()).decode()
+
+# ---------------------------------------------------------
+# SPLASH SCREEN / FULLSCREEN KAPAK VE GET STARTED BUTONU
+# ---------------------------------------------------------
+if not st.session_state.logged_in:
+  bg_css = (
+      f'background-image: url("data:image/png;base64,{img_b64}");'
+      if img_b64
+      else "background-color: #0b1329;"
+  )
+  st.markdown(
+      f"""
     <style>
+    header {{ visibility: hidden !important; height: 0 !important; }}
+    #MainMenu {{ visibility: hidden !important; }}
+    footer {{ visibility: hidden !important; }}
+    
     .stApp {{
-        background-image: linear-gradient(rgba(4, 9, 20, 0.90), rgba(8, 15, 30, 0.94)), 
-                          url("{current_bg}");
+        background-color: #0b1329 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+    }}
+    .block-container {{
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+    }}
+    .fullscreen-bg {{
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        {bg_css}
         background-size: cover;
         background-position: center;
-        background-attachment: fixed;
+        background-repeat: no-repeat;
+        z-index: 999;
     }}
-    .main-header {{
-        font-family: 'Helvetica Neue', sans-serif;
-        color: #ffffff;
-        font-weight: 900;
-        letter-spacing: -0.5px;
-        text-shadow: 0 2px 10px rgba(0, 210, 255, 0.3);
+    .custom-get-started-btn {{
+        position: fixed;
+        top: 82%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 230px;
+        height: 55px;
+        background: rgba(14, 116, 144, 0.9);
+        border: 2px solid #38bdf8;
+        border-radius: 30px;
+        z-index: 1001;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #ffffff !important;
+        font-family: 'Inter', sans-serif;
+        font-size: 1.1rem;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-decoration: none;
+        box-shadow: 0 0 25px rgba(56, 189, 248, 0.6);
+        transition: all 0.3s ease;
     }}
-    .ticker-box {{
-        background: linear-gradient(90deg, rgba(0, 210, 255, 0.15), rgba(58, 123, 213, 0.15));
-        border-left: 5px solid #00d2ff;
-        border-right: 5px solid #3a7bd5;
-        padding: 12px 18px;
-        border-radius: 8px;
-        margin-bottom: 25px;
-        font-size: 14px;
-        color: #f1f5f9;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-    }}
-    .portfolio-box {{
-        background: linear-gradient(135deg, rgba(15, 32, 67, 0.85), rgba(5, 15, 30, 0.95));
-        border: 2px solid #00d2ff;
-        padding: 45px;
-        border-radius: 20px;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.7);
-        text-align: center;
+    .custom-get-started-btn:hover {{
+        background: rgba(56, 189, 248, 1);
+        border-color: #ffffff;
+        box-shadow: 0 0 35px rgba(56, 189, 248, 1);
+        color: #ffffff !important;
     }}
     </style>
+
+    <div class="fullscreen-bg"></div>
+    <a href="/?action=start" target="_self" class="custom-get-started-btn">
+        GET STARTED ➔
+    </a>
     """,
-    unsafe_allow_html=True
-)
+      unsafe_allow_html=True,
+  )
 
-# Canlı Sistem Alarm Bandı (Ticker)
-st.markdown(
-    """
-    <div class="ticker-box">
-        <b>⚡ LIVE GATEWAY TICKER:</b> [IST HUB] Zone C capacity at 88% | [TK-1984] Flight en-route to FRA (FL350) | [CUSTOMS] Pre-declaration SLA: 99.6% | [SECURITY] ULD weight balance verified.
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+else:
+  # ---------------------------------------------------------
+  # ANA UYGULAMA EKRANI (UÇAK ANIMASYONU VE PARLAK BEYAZ BANT)
+  # ---------------------------------------------------------
+  st.markdown(
+      """
+        <style>
+        .stApp {
+            background-color: #f8fafc !important;
+            color: #0f172a !important;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        h1, h2, h3, h4, h5, h6, p, span, label, div {
+            color: #0f172a !important;
+        }
+        .main .block-container {
+            padding-bottom: 90px !important;
+            padding-top: 2rem !important;
+        }
+        .thy-header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+            padding: 24px 35px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(30, 58, 138, 0.3);
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .thy-header * { color: #ffffff !important; }
+        .thy-logo-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .thy-motto {
+            font-size: 1.15rem;
+            color: #bae6fd !important;
+            font-style: italic;
+        }
 
-# Üst Başlık
-st.markdown("<h1 class='main-header'>✈️ Global Air Freight Enterprise Control Tower</h1>", unsafe_allow_html=True)
-st.markdown("**Next-Gen Logistics Operations, Real-Time Telemetry, Financial Risk Engine & ULD Suite**")
-st.markdown("---")
+        /* EKG Pulse Animasyonu */
+        .pulse-svg path {
+            stroke-dasharray: 600;
+            stroke-dashoffset: 600;
+            animation: dash 2.5s linear infinite;
+        }
+        @keyframes dash {
+            from { stroke-dashoffset: 600; }
+            to { stroke-dashoffset: 0; }
+        }
 
-st.sidebar.markdown("---")
-st.sidebar.info("📌 **System Status:** Active (99.9% Uptime)\n\n🌐 **Gateway Hub:** IST Mega Core\n\n🔒 **Security:** Enterprise Grade A+")
+        /* Hareketli Uçak Animasyonu (Başlığın Sağ Tarafında) */
+        .flying-plane {
+            font-size: 1.8rem;
+            display: inline-block;
+            animation: fly-plane 6s ease-in-out infinite;
+            margin-left: 15px;
+        }
+        @keyframes fly-plane {
+            0% { transform: translateX(0px) translateY(0px) rotate(0deg); opacity: 0.7; }
+            50% { transform: translateX(25px) translateY(-5px) rotate(5deg); opacity: 1; }
+            100% { transform: translateX(0px) translateY(0px) rotate(0deg); opacity: 0.7; }
+        }
 
-# ----------------- MODÜL 1: LIVE AWB TRACKING -----------------
-if modul == "📦 Live AWB Tracking & Telemetry":
-    st.subheader("📦 Master Air Waybill (AWB) Real-Time Telemetry & Milestones")
-    st.markdown("Monitor multi-leg shipment statuses, gateway checkpoints, and real-time SLA deviation risks.")
-    
-    col1, col2, col3 = st.columns([2, 1, 1])
-    with col1:
-        awb_no = st.text_input("Master AWB Number:", "235-84920192")
-    with col2:
-        carrier = st.selectbox("Carrier Airline:", ["Turkish Cargo (THY)", "Lufthansa Cargo", "Qatar Cargo", "Emirates SkyCargo"])
-    with col3:
-        dest = st.selectbox("Destination Hub:", ["JFK (New York)", "FRA (Frankfurt)", "DXB (Dubai)", "ICN (Seoul)", "AMS (Amsterdam)"])
+        /* Modern Yatay Menü */
+        div[data-testid="stRadio"] {
+            background: #ffffff;
+            padding: 12px 18px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            margin-bottom: 25px;
+        }
+        div[data-testid="stRadio"] div[role="radiogroup"] {
+            display: flex;
+            flex-direction: row;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        div[data-testid="stRadio"] label {
+            background: #f1f5f9 !important;
+            padding: 8px 14px !important;
+            border-radius: 8px !important;
+            border: 1px solid #cbd5e1 !important;
+        }
+        div[data-testid="stRadio"] label p {
+            color: #0f172a !important;
+            font-weight: 700 !important;
+            font-size: 0.92rem !important;
+        }
 
-    if st.button("Execute Live Gateway Query", type="primary"):
-        with st.spinner(f'Establishing secure API handshake with {carrier} network...'):
-            st.success(f"Connection Verified | Carrier: **{carrier}** | Corridor: **IST ➔ {dest}** | AWB: **{awb_no}**")
-            
-            m1, m2, m3, m4 = st.columns(4)
-            m1.metric("Current Milestone", "ARR (Arrived)", "+1.2h vs ETA")
-            m2.metric("SLA Compliance", "99.6%", "Optimal Performance")
-            m3.metric("Cold Chain (PHA)", "+4.1 °C", "Strict Range Maintained")
-            m4.metric("Risk Index", "Low", "Secure Corridor")
+        /* DGR ve Selectbox Açılır Menü */
+        div[data-baseweb="select"] div, div[data-baseweb="popover"] div, ul[role="listbox"] li, div[role="option"] {
+            color: #ffffff !important;
+            background-color: #1e293b !important;
+        }
+        div[data-baseweb="select"] span {
+            color: #ffffff !important;
+        }
 
-            st.markdown("### 📍 Operational Milestone Progress Tracker")
-            milestones = ["1. Booking (BK)", "2. RCS (Acceptance)", "3. BUILDP (Build-up)", "4. DEP (Departure)", "5. ARR (Arrival)", "6. RCF (Customs Transfer)", "7. DLV (Delivery)"]
-            current_step = 5 
-            progress_val = int((current_step / len(milestones)) * 100)
-            st.progress(progress_val, text=f"Active Milestone Phase: {milestones[current_step-1]}")
+        .hub-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+        .hub-table th {
+            background: #1e3a8a !important;
+            color: #ffffff !important;
+            font-weight: 700;
+            padding: 14px;
+            text-align: left;
+        }
+        .hub-table td {
+            padding: 12px 14px;
+            color: #334155 !important;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .status-badge {
+            background: #dcfce7;
+            color: #166534 !important;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 700;
+        }
+        .equal-img-container img {
+            height: 250px !important;
+            object-fit: cover !important;
+            border-radius: 12px !important;
+        }
+        .purpose-img {
+            width: 100% !important;
+            height: 320px !important;
+            object-fit: cover !important;
+            border-radius: 12px !important;
+        }
 
-            tab1, tab2, tab3 = st.tabs(["Flight Telemetry", "Audit Logs", "Customs & Compliance"])
-            with tab1:
-                st.write("**Aircraft Registration:** TC-LJC (Boeing 777F Freighter)")
-                st.write("**Total Chargeable Weight:** 2,850 KG (Volumetric Ratio: 1:6)")
-                st.write("**Special Service Codes:** EAT (Perishable Foodstuffs), GEN")
-                st.write("**Warehouse Bay:** IST Cargo Terminal - Zone C, Rack 14")
-            with tab2:
-                log_df = pd.DataFrame({
-                    "Timestamp": ["2026-10-06 14:30", "2026-10-06 09:15", "2026-10-05 22:00"],
-                    "Checkpoint": [dest, "In-Flight Corridor", "IST Origin Hub"],
-                    "Event Description": ["Aircraft landed, awaiting customs ramp transfer", "Cruising at FL350, fuel burn nominal", "Cargo build-up completed and loaded into PMC ULD"]
-                })
-                st.dataframe(log_df, use_container_width=True)
-            with tab3:
-                st.warning("⚠️ **Automated Notice:** Destination customs pre-declaration is active. Ensure commercial invoice and phytosanitary certificates are attached to prevent terminal dwell penalties.")
+        /* Alt Sabit Canlı Bant - TÜM YAZILAR KESİN %100 BEYAZ */
+        .ticker-container-fixed {
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 44px !important;
+            background-color: #0b1329 !important;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.5) !important;
+            z-index: 999999 !important;
+            border-top: 3px solid #38bdf8 !important;
+            display: flex !important;
+            align-items: center !important;
+            overflow: hidden !important;
+        }
+        .ticker-live-badge {
+            background: #1e3a8a !important;
+            color: #ffffff !important;
+            font-weight: 900 !important;
+            font-size: 0.85rem !important;
+            height: 100% !important;
+            display: flex !important;
+            align-items: center !important;
+            padding: 0 18px !important;
+            z-index: 1000000 !important;
+            letter-spacing: 1px !important;
+            white-space: nowrap !important;
+        }
+        .ticker-scroll-wrap {
+            width: 100% !important;
+            overflow: hidden !important;
+            white-space: nowrap !important;
+        }
+        .ticker-scroll-text {
+            display: inline-block !important;
+            padding-left: 100% !important;
+            animation: ticker-anim 35s linear infinite !important;
+        }
+        .ticker-item {
+            display: inline-block !important;
+            padding: 0 2rem !important;
+            font-size: 0.95rem !important;
+            color: #ffffff !important;
+            font-weight: 600 !important;
+            font-family: monospace !important;
+        }
+        .ticker-item, .ticker-item span, .ticker-item b {
+            color: #ffffff !important;
+        }
+        @keyframes ticker-anim {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-100%, 0, 0); }
+        }
+        </style>
+        """,
+      unsafe_allow_html=True,
+  )
 
-# ----------------- MODÜL 2: DEMURRAGE RISK SUITE -----------------
-elif modul == "💰 Demurrage & Storage Risk Suite":
-    st.subheader("💰 Demurrage & Storage Financial Risk Predictive Engine")
-    st.markdown("Simulate holding penalties, warehouse dwell time impacts, and potential demurrage liabilities before they occur.")
-
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        kargo_tipi = st.selectbox("Cargo Classification:", ["General Cargo", "Perishable (Cold Chain)", "Dangerous Goods (DG)", "Valuable Cargo (VAL)"])
-    with c2:
-        agirlik_kg = st.number_input("Chargeable Weight (KG):", min_value=100, max_value=100000, value=4500)
-    with c3:
-        bekleme_gun = st.slider("Terminal Dwell Time (Days):", 1, 30, 6)
-
-    if st.button("Run Financial Exposure Simulation", type="primary"):
-        carpanlar = {"General Cargo": 0.18, "Perishable (Cold Chain)": 0.40, "Dangerous Goods (DG)": 0.65, "Valuable Cargo (VAL)": 0.95}
-        gunluk_oran = carpanlar.get(kargo_tipi, 0.20)
-        
-        chargeable_days = max(0, bekleme_gun - 3) 
-        total_cost = agirlik_kg * gunluk_oran * chargeable_days
-        
-        st.markdown("### 📊 Financial Exposure & Penalty Breakdown")
-        r1, r2, r3, r4 = st.columns(4)
-        r1.metric("Free Time Allowance", "3 Days", "Standard SLA")
-        r2.metric("Billable Storage Days", f"{chargeable_days} Days")
-        r3.metric("Daily Storage Rate", f"${gunluk_oran}/KG")
-        r4.metric("Estimated Total Demurrage", f"${total_cost:,.2f}", delta_color="inverse")
-
-        if total_cost > 0:
-            st.error(f"🚨 **Critical Financial Alert:** Accumulated storage penalty has reached **${total_cost:,.2f}** due to extended dwell time on day {bekleme_gun}. Immediate broker escalation is mandatory.")
-            
-            with st.expander("📄 Generate Automated Demurrage Waiver Request Letter"):
-                st.text(f"""
-To: Terminal Operations Management
-Subject: Waiver Request for Demurrage Charges - AWB 235-84920192
-
-Dear Operations Team,
-We kindly request an extension of the free time allowance for our consignment weighing {agirlik_kg} KG ({kargo_tipi}), 
-currently held at terminal warehouse due to unexpected customs clearance delays. Total accumulated penalty stands at ${total_cost:,.2f}.
-Your cooperation in waiving or reducing these charges is greatly appreciated.
-
-Sincerely,
-Eren Erdoğan
-Operations Control Team
-                """)
-        else:
-            st.success("✅ **Within Free Time Window:** Shipment is currently safe from demurrage and storage penalties.")
-
-# ----------------- MODÜL 3: ROUTE ANALYTICS -----------------
-elif modul == "📊 Route Yield & Corridor Analytics":
-    st.subheader("📊 IST Hub Outbound Route Capacity & Yield Dashboard")
-    st.markdown("Comprehensive performance metrics across strategic global air freight corridors.")
-
-    data = {
-        "Route Corridor": ["IST - JFK", "IST - FRA", "IST - DXB", "IST - ICN", "IST - AMS", "IST - NRT"],
-        "Weekly Frequencies": [14, 21, 18, 7, 10, 5],
-        "Load Factor (%)": [95.2, 89.1, 92.4, 97.6, 86.5, 93.8],
-        "Total Uplifted Tonnage (Tons)": [1450, 1120, 1250, 960, 710, 590],
-        "Average Yield ($/KG)": [3.45, 2.80, 2.95, 3.85, 2.70, 4.10]
-    }
-    df_hatlar = pd.DataFrame(data)
-    
-    st.dataframe(df_hatlar, use_container_width=True)
-    st.markdown("### 📈 Corridor Load Factor Comparison")
-    st.bar_chart(df_hatlar.set_index("Route Corridor")["Load Factor (%)"])
-
-# ----------------- MODÜL 4: ULD OPTIMIZER -----------------
-elif modul == "🛄 ULD & Center of Gravity Optimizer":
-    st.subheader("🛄 Unit Load Device (ULD) Volume & Center of Gravity (CG) Suite")
-    st.markdown("Advanced wide-body freighter contour space planning and weight distribution simulator.")
-
-    col_a, col_b = st.columns(2)
-    with col_a:
-        uld_tipi = st.selectbox("ULD Container Type Profile:", ["LD3 (Lower Deck Contour - 4.5 m³)", "PMC (Main Deck Pallet - 6.8 m³)", "AKE (Standard Contour - 4.3 m³)"])
-        kargo_hacmi = st.number_input("Total Consignment Volume (m³):", min_value=1.0, max_value=200.0, value=34.5)
-    with col_b:
-        max_payload = st.number_input("Max Allowable Payload per ULD (KG):", min_value=500, max_value=6800, value=1500)
-        total_weight_input = st.number_input("Total Shipment Gross Weight (KG):", min_value=100, max_value=50000, value=4800)
-
-    kapasite = 4.5 if "LD3" in uld_tipi else (6.8 if "PMC" in uld_tipi else 4.3)
-    gereken_uld = int((kargo_hacmi // kapasite) + (1 if kargo_hacmi % kapasite > 0 else 0))
-
-    if st.button("Compute Optimal ULD Matrix & CG", type="primary"):
-        st.success(f"Selected ULD Specification: **{uld_tipi}**")
-        c_1, c_2, c_3 = st.columns(3)
-        c_1.metric("Required Container Count", f"{gereken_uld} Units")
-        c_2.metric("Volumetric Space Efficiency", f"%{min(100, int((kargo_hacmi / (gereken_uld * kapasite)) * 100))}")
-        c_3.metric("Center of Gravity (CG)", "Balanced (Limit: ±2.5%)", "Pass")
-        st.info("💡 **Load Control Insight:** Main deck PMC pallet utilization yields higher structural stacking efficiency for heavy industrial machinery while keeping aircraft trim within safety envelopes.")
-
-# ----------------- MODÜL 5: CORSIA ESG -----------------
-elif modul == "🌱 CORSIA Green Logistics & ESG":
-    st.subheader("🌱 Green Supply Chain & CORSIA Carbon Emission Estimator")
-    st.markdown("Calculate estimated CO2 footprint for air cargo transportation in compliance with international aviation environmental standards.")
-
-    col_x, col_y = st.columns(2)
-    with col_x:
-        dist_km = st.slider("Great Circle Flight Distance (KM):", 500, 18000, 5200)
-    with col_y:
-        cargo_tons = st.number_input("Consignment Weight (Metric Tons):", 1.0, 150.0, 22.5)
-    
-    co2_emission = dist_km * cargo_tons * 0.58 
-    
-    if st.button("Calculate Environmental Footprint", type="primary"):
-        st.metric("Estimated CO2 Emissions", f"{co2_emission:,.2f} KG CO2")
-        st.info("🌍 **CORSIA Advisory:** Carbon offset certificates via Sustainable Aviation Fuel (SAF) blending credits can be allocated to achieve net-zero transport compliance under international regulatory frameworks.")
-
-# ----------------- MODÜL 6: ABOUT / PORTFOLIO -----------------
-elif modul == "👤 About & Professional Profile":
-    st.subheader("👤 Professional Profile & Academic Portfolio")
-    st.markdown("Verified student portfolio and technical project credentials.")
-    
-    st.markdown(
-        """
-        <div class="portfolio-box">
-            <h1 style="color: #00d2ff; margin-bottom: 10px; font-weight: 900; font-size: 38px;">Eren Erdoğan</h1>
-            <p style="color: #ffffff; font-size: 20px; font-weight: 600; margin-bottom: 15px;">Civil Air Transportation Management Student</p>
-            <p style="color: #00d2ff; font-size: 15px; font-weight: 500; letter-spacing: 1.5px; margin-bottom: 25px;">AIR CARGO OPERATIONS & CONTROL TOWER SYSTEMS PORTFOLIO</p>
-            <hr style="border-color: rgba(0,210,255,0.4); margin: 25px 0;">
-            <p style="color: #e2e8f0; font-size: 18px; margin-bottom: 15px;">📧 <b>Direct Professional Contact:</b> <a href="mailto:erenerdogan.808@gmail.com" style="color: #00d2ff; text-decoration: none;">erenerdogan.808@gmail.com</a></p>
-            <p style="color: #cbd5e1; font-size: 16px; margin-top: 20px; line-height: 1.6; max-width: 800px; margin-left: auto; margin-right: auto;">
-                Dedicated Civil Air Transportation Management student passionate about digital logistics architectures, real-time AWB tracking systems, demurrage risk mitigation workflows, and capacity optimization models. Bridging aviation management theory with modern software tools.
-            </p>
+  st.markdown(
+      """
+        <div class="thy-header">
+            <div>
+                <div class="thy-logo-title">
+                    <svg class="pulse-svg" width="50" height="35" viewBox="0 0 100 40">
+                        <path d="M0,20 L25,20 L30,5 L38,35 L45,10 L52,28 L58,20 L100,20" 
+                              fill="none" stroke="#38bdf8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>CARGO<span style="color: #38bdf8;">PULSE</span></span>
+                    <span class="flying-plane">✈️</span>
+                </div>
+                <div class="thy-motto">"Measuring the Pulse of Your Cargo"</div>
+            </div>
+            <div style="text-align: right; background: rgba(255,255,255,0.15); padding: 8px 18px; border-radius: 20px;">
+                <span style="font-weight:700; font-size: 0.95rem; color: #ffffff !important;">Global Fleet Control Suite</span>
+            </div>
         </div>
         """,
-        unsafe_allow_html=True
-    )
-    
-    st.markdown("### 🏆 Academic Focus & Technical Competencies")
-    col_s1, col_s2, col_s3 = st.columns(3)
-    col_s1.markdown("✔️ **Air Cargo Operations:** AWB tracking, RCS, DEP, ARR, RCF milestones & SLA management.")
-    col_s2.markdown("✔️ **Data & Software Tools:** Python, Streamlit, Pandas, and interactive Control Tower design.")
-    col_s3.markdown("✔️ **Risk & Cost Analysis:** Demurrage calculations, ULD load balancing, and CORSIA framework.")
+      unsafe_allow_html=True,
+  )
 
-st.markdown("---")
-st.markdown("<p style='text-align: center; color: #94a3b8;'>Civil Air Transportation Management Student | Enterprise Proof of Work Portfolio</p>", unsafe_allow_html=True)
+  module = st.radio(
+      "Navigation",
+      [
+          "Home and Live Fleet Pulse",
+          "AWB Flight Ticket and Route Generator",
+          "IATA Chargeable Weight Engine",
+          "DGR and Hazmat Compliance",
+          "ULD and Aircraft Clearance",
+          "Purpose of CargoPulse",
+          "About Developer",
+      ],
+      horizontal=True,
+      label_visibility="collapsed",
+  )
+
+  st.markdown("<br>", unsafe_allow_html=True)
+
+  IMG_HOME_1 = "https://images.pexels.com/photos/912050/pexels-photo-912050.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
+  IMG_HOME_2 = "https://images.pexels.com/photos/46148/aircraft-jet-landing-cloud-46148.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
+  IMG_HOME_3 = "https://images.pexels.com/photos/358319/pexels-photo-358319.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
+  IMG_TICKET = "https://images.pexels.com/photos/2026324/pexels-photo-2026324.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
+  IMG_IATA = "https://images.pexels.com/photos/4483610/pexels-photo-4483610.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
+  IMG_DGR = "https://images.pexels.com/photos/2026322/pexels-photo-2026322.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
+  IMG_ULD = "https://images.pexels.com/photos/1004584/pexels-photo-1004584.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
+  IMG_PURPOSE_1 = "https://images.pexels.com/photos/726233/pexels-photo-726233.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
+  IMG_PURPOSE_2 = "https://images.pexels.com/photos/6169052/pexels-photo-6169052.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
+  IMG_DEV = "https://images.pexels.com/photos/590022/pexels-photo-590022.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
+
+  if module == "Home and Live Fleet Pulse":
+    st.subheader("Global Network Control and Cargo Telemetry")
+    col_img1, col_img2, col_img3 = st.columns(3)
+    with col_img1:
+      st.markdown(
+          f'<div class="equal-img-container"><img src="{IMG_HOME_1}"'
+          ' style="width:100%;"></div>',
+          unsafe_allow_html=True,
+      )
+    with col_img2:
+      st.markdown(
+          f'<div class="equal-img-container"><img src="{IMG_HOME_2}"'
+          ' style="width:100%;"></div>',
+          unsafe_allow_html=True,
+      )
+    with col_img3:
+      st.markdown(
+          f'<div class="equal-img-container"><img src="{IMG_HOME_3}"'
+          ' style="width:100%;"></div>',
+          unsafe_allow_html=True,
+      )
+
+    st.markdown("### Live Telemetry Metrics")
+    m1, m2, m3, m4 = st.columns(4)
+    with m1:
+      st.metric(
+          label="Active Cargo Flights", value="48 Aircraft", delta="+4 Active"
+      )
+    with m2:
+      st.metric(
+          label="Daily Freight Tonnage", value="1,850 Tons", delta="+12.2%"
+      )
+    with m3:
+      st.metric(
+          label="On-Time Delivery SLA", value="99.6%", delta="+0.4%"
+      )
+    with m4:
+      st.metric(
+          label="Fleet Cargo Pulse", value="78 BPM", delta="Normal Rhythm"
+      )
+
+    st.markdown("---")
+    st.markdown("### Gateway Hub Operations Status")
+    st.markdown(
+        """
+        <table class="hub-table">
+            <thead>
+                <tr>
+                    <th>Hub Code</th>
+                    <th>Gateway Airport</th>
+                    <th>Inbound Tonnage</th>
+                    <th>Outbound Tonnage</th>
+                    <th>Operational Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td><b>IST</b></td><td>Istanbul Airport (IST) Cargo City</td><td>420 Tons</td><td>490 Tons</td><td><span class="status-badge">Optimal</span></td></tr>
+                <tr><td><b>JFK</b></td><td>John F. Kennedy Intl (JFK)</td><td>380 Tons</td><td>410 Tons</td><td><span class="status-badge">Smooth</span></td></tr>
+                <tr><td><b>FRA</b></td><td>Frankfurt Airport (FRA) CargoHub</td><td>510 Tons</td><td>480 Tons</td><td><span class="status-badge" style="background:#fef3c7; color:#92400e !important;">High Density</span></td></tr>
+                <tr><td><b>HND</b></td><td>Tokyo Haneda Airport (HND)</td><td>290 Tons</td><td>320 Tons</td><td><span class="status-badge">Optimal</span></td></tr>
+                <tr><td><b>DXB</b></td><td>Dubai World Central (DWC)</td><td>460 Tons</td><td>510 Tons</td><td><span class="status-badge">Smooth</span></td></tr>
+            </tbody>
+        </table>
+        """,
+        unsafe_allow_html=True,
+    )
+
+  elif module == "AWB Flight Ticket and Route Generator":
+    st.subheader("Air Waybill (AWB) Cargo Ticket Generator")
+    col_form, col_ticket = st.columns([1, 1.2])
+
+    with col_form:
+      st.markdown("#### Flight and Cargo Booking Details")
+      origin = st.selectbox(
+          "Origin Gateway",
+          [
+              "IST - Istanbul, Turkiye",
+              "FRA - Frankfurt, Germany",
+              "DXB - Dubai, UAE",
+          ],
+      )
+      destination = st.selectbox(
+          "Destination Gateway",
+          [
+              "JFK - New York, USA",
+              "HND - Tokyo, Japan",
+              "CDG - Paris, France",
+              "LHR - London, UK",
+          ],
+      )
+      cargo_type = st.selectbox(
+          "Cargo Nature",
+          [
+              "General Freight (GEN)",
+              "Perishable Goods (PER)",
+              "Pharmaceuticals (PIL)",
+              "High Tech Electronics",
+          ],
+      )
+      pcs = st.number_input("Number of Pieces", min_value=1, value=5)
+      weight = st.number_input("Gross Weight (kg)", min_value=1.0, value=350.0)
+      st.button("Generate Cargo Ticket", type="primary")
+
+    with col_ticket:
+      awb_num = f"235-IST-{random.randint(10000000, 99999999)}"
+      flt_num = f"TK-{random.randint(6500, 6599)}"
+      st.markdown(
+          f"""
+            <div style="background: white; padding: 20px; border-radius: 12px; border: 2px dashed #cbd5e1;">
+                <h3 style="color:#1e3a8a; display:flex; align-items:center; gap:8px;">
+                   🎫 CARGOPULSE AIR WAYBILL
+                </h3>
+                <hr>
+                <p style="color:#0f172a !important;"><b>AWB:</b> {awb_num} | <b>Flight:</b> {flt_num}</p>
+                <p style="color:#0f172a !important;"><b>From:</b> {origin} <b>To:</b> {destination}</p>
+                <p style="color:#0f172a !important;"><b>Pieces:</b> {pcs} CTN | <b>Weight:</b> {weight} KG</p>
+                <img src="{IMG_TICKET}" style="width:100%; height:180px; object-fit:cover; border-radius:8px;" />
+            </div>
+            """,
+          unsafe_allow_html=True,
+      )
+
+  elif module == "IATA Chargeable Weight Engine":
+    st.subheader("IATA Chargeable Weight Engine")
+    col1, col2 = st.columns(2)
+    with col1:
+      length = st.number_input("Length (cm)", min_value=1.0, value=120.0)
+      width = st.number_input("Width (cm)", min_value=1.0, value=80.0)
+      height = st.number_input("Height (cm)", min_value=1.0, value=100.0)
+      gross_weight = st.number_input(
+          "Gross Actual Weight (kg)", min_value=0.1, value=150.0
+      )
+    with col2:
+      rate_per_kg = st.number_input(
+          "Base Air Freight Rate ($)", min_value=0.1, value=3.80
+      )
+      st.image(IMG_IATA, use_container_width=True)
+
+    volumetric_weight = (length * width * height) / 6000.0
+    chargeable_weight = max(gross_weight, volumetric_weight)
+    total_cost = chargeable_weight * rate_per_kg
+
+    st.markdown("---")
+    r1, r2, r3 = st.columns(3)
+    with r1:
+      st.metric("Volumetric Weight", f"{volumetric_weight:.2f} kg")
+    with r2:
+      st.metric("Chargeable Weight", f"{chargeable_weight:.2f} kg")
+    with r3:
+      st.metric("Total Freight Cost", f"${total_cost:,.2f}")
+
+  elif module == "DGR and Hazmat Compliance":
+    st.subheader("Dangerous Goods (DGR) Verification")
+    col1, col2 = st.columns(2)
+    with col1:
+      un_num = st.selectbox(
+          "UN Number",
+          ["UN3480 (Lithium Batteries)", "UN1845 (Dry Ice)", "UN1230 (Methanol)"],
+      )
+      qty = st.number_input("Package Net Quantity (kg)", min_value=0.1, value=10.0)
+      st.success(f"COMPLIANT: {un_num} approved for dispatch under limit.")
+    with col2:
+      st.image(IMG_DGR, use_container_width=True)
+
+  elif module == "ULD and Aircraft Clearance":
+    st.subheader("ULD and Aircraft Cargo Door Clearance")
+    col1, col2 = st.columns(2)
+    with col1:
+      c_wid = st.number_input("Width (cm)", min_value=1, value=180)
+      c_hgt = st.number_input("Height (cm)", min_value=1, value=150)
+
+      MAX_DOOR_WIDTH = 372
+      MAX_DOOR_HEIGHT = 305
+
+      if c_wid <= MAX_DOOR_WIDTH and c_hgt <= MAX_DOOR_HEIGHT:
+        st.success(
+            f"PASSED: Item ({c_wid}x{c_hgt} cm) clears Boeing 777F door aperture"
+            f" threshold ({MAX_DOOR_WIDTH}x{MAX_DOOR_HEIGHT} cm)."
+        )
+      else:
+        st.error(
+            f"FAILED: Item dimensions ({c_wid}x{c_hgt} cm) EXCEED main door"
+            f" limit ({MAX_DOOR_WIDTH}x{MAX_DOOR_HEIGHT} cm)!"
+        )
+
+    with col2:
+      st.image(IMG_ULD, use_container_width=True)
+
+  elif module == "Purpose of CargoPulse":
+    st.subheader("Purpose of CargoPulse")
+    col1, col2 = st.columns(2)
+    with col1:
+      st.markdown(
+          f'<img src="{IMG_PURPOSE_1}" class="purpose-img">',
+          unsafe_allow_html=True,
+      )
+      st.markdown(
+          """
+          <br>
+          <ul style="padding-left: 20px; margin-top: 5px;">
+              <li style="font-weight: 700; color: #0f172a;">Revenue Protection</li>
+              <li style="font-weight: 700; color: #0f172a; margin-top: 6px;">Safety Assurance</li>
+              <li style="font-weight: 700; color: #0f172a; margin-top: 6px;">Compatibility</li>
+          </ul>
+          """,
+          unsafe_allow_html=True,
+      )
+    with col2:
+      st.markdown(
+          f'<img src="{IMG_PURPOSE_2}" class="purpose-img">',
+          unsafe_allow_html=True,
+      )
+      st.markdown(
+          "<br>CargoPulse is a modern air cargo tracking platform designed to"
+          " provide real-time shipment visibility and streamlined cargo"
+          " operations. It brings flight and cargo destination data together in"
+          " a clean, intuitive interface, making logistics tracking faster and"
+          " more efficient.",
+          unsafe_allow_html=True,
+      )
+
+  elif module == "About Developer":
+    st.subheader("About Developer")
+    col1, col2 = st.columns(2)
+    with col1:
+      st.markdown(
+          """
+            ### Eren Erdoğan
+            * **Department:** Civil Aviation Transportation Management (İstanbul Bilgi Üniversitesi)
+            * **Project:** CargoPulse Control Tower
+            * **Email:** [eren.erdogan05@bilgiedu.net](mailto:eren.erdogan05@bilgiedu.net)
+            """
+      )
+    with col2:
+      st.image(IMG_DEV, use_container_width=True)
+
+  # Live Ticker Bant (Zorunlu Saf Beyaz Yazılar)
+  st.markdown(
+      """
+        <div class="ticker-container-fixed">
+            <div class="ticker-live-badge">
+                LIVE DESTINATION TELEMETRY
+            </div>
+            <div class="ticker-scroll-wrap">
+                <div class="ticker-scroll-text">
+                    <div class="ticker-item">IST -> FRA | TK6501 | B777F | CARGO: 38.4T | STATUS: IN TRANSIT</div>
+                    <div class="ticker-item">DXB -> LHR | EK9204 | B777F | CARGO: 42.1T | STATUS: ON SCHEDULE</div>
+                    <div class="ticker-item">HKG -> ORD | CX082 | B747-8F | CARGO: 98.5T | STATUS: CRUISING FL340</div>
+                    <div class="ticker-item">IST -> JFK | TK6505 | B777F | CARGO: 45.0T | STATUS: DEPARTED</div>
+                    <div class="ticker-item">FRA -> SIN | LH8402 | B777F | CARGO: 31.2T | STATUS: BOARDING</div>
+                </div>
+            </div>
+        </div>
+        """,
+      unsafe_allow_html=True,
+  )
